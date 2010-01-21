@@ -20,8 +20,8 @@
  *        we will need their user/password anyways for posting issues.
  */
 
-static NSString *redmine_address = @"redmine.0x7a69.net";
-static NSString *redmine_key = @"e41b3bcefa814631bc414c2cba2ff6dde1b58b6f";
+static NSString *redmine_address = @"YOUR.REDMINE_URL.COM";
+static NSString *redmine_key = @"YOUR API KEY";
 
 +(NSNumber*) getIssueIDFromUrl:(NSString*)url {
 	
