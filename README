@@ -21,3 +21,4 @@ Todo list:
 - filter activities tab by project/assigned to me
 - create new issue
 - reply to issue
+- migrate to official redmine 0.9x restful api when it makes more progress
