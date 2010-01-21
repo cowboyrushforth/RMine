@@ -4,6 +4,12 @@ more details coming soon!
 
 Application Logo taken from here:  http://www.redmine.org/boards/1/topics/1183  (Thank you)
 
+Quick Screenshots:
+
+http://0x7a69.net/Rmine1.png
+http://0x7a69.net/Rmine2.png
+http://0x7a69.net/Rmine3.png
+
 Quick Start:
 
 1. install plugin into RAILS_ROOT/vendor/plugins
@@ -22,3 +28,4 @@ Todo list:
 - create new issue
 - reply to issue
 - migrate to official redmine 0.9x restful api when it makes more progress
+
