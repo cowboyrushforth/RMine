@@ -1,8 +1,10 @@
 class IphoneController < ApplicationController
 
   skip_before_filter :user_setup, :check_if_login_required, :set_localization
-  before_filter :check_api_key_auth
+  before_filter :check_api_key_auth, :except => [:getkey]
 
+  #this will setup current user if we have good auth
+  #otherwise will return 403
   def check_api_key_auth
     User.current = User.find_by_api_key(params[:key])
     unless User.current
@@ -11,7 +13,22 @@ class IphoneController < ApplicationController
     end
   end
 
+  #this will return the api key upon successful
+  #username/password authentication
+  def getkey
+    user = User.try_to_login(params[:username], params[:password])
+    if user.nil?
+        render :text => "Not Authorized", :status => 403
+        return
+    elsif user.new_record?
+        render :text => "Not Authorized", :status => 403
+        return
+    else    
+       render :text => user.api_key
+    end
+  end
 
+  #returns simply the string issue name
   def issue_status
     id = params[:issue_id]
     if id
@@ -26,6 +43,9 @@ class IphoneController < ApplicationController
     end
   end
 
+  #returns a bunch of tasty data surrounding an issue
+  #is typically only called once per issue
+  #TODO - ensure user has permission to see this issue.
   def issue
     id = params[:issue_id]
     if id
@@ -57,9 +77,12 @@ class IphoneController < ApplicationController
     jsonres[:project] = @project
     jsonres[:changesets] = @changesets
     render :json => jsonres.to_json
-
   end
 
+  #this powers the issues tab
+  #we use the query model here hopefully
+  #to ensure that the issues list matches
+  #the issues list for this user in the web ui
   def issues
     @query = Query.new(:name => "_")
     @issues = @query.issues(:order => "issues.created_on desc", :limit => 50, :include => [:project, :author])
