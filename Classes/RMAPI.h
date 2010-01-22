@@ -24,7 +24,7 @@
 +(void)populateIssueForId:(NSNumber*)iid  ob:(id)ob callback:(SEL)cb;
 +(void)populateIssueJournalsForId:(NSNumber*)iid  ob:(id)ob callback:(SEL)cb;
 +(void)updateIssueStatus:(NSNumber*)issueId ob:(id)ob callback:(SEL)cb;
-
++(NSString*)getAuthKey:(NSString*)username pwd:(NSString*)password;
 
 //+ (void)getIssuesForProject:(Project *)project;
 

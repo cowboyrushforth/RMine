@@ -12,16 +12,15 @@ http://0x7a69.net/Rmine3.png
 
 Quick Start:
 
-1. install plugin into RAILS_ROOT/vendor/plugins
-2. edit RMAPI.m and change the redmine url to your url and paste in your api key.  
-        *NOTE* this is not the mail api key.  this is a redmine 0.9x feature only. you can get it in 'My Account'
-3. Build and Go!
+1. install redmine plugin from folder Redmine_Plugin into RAILS_ROOT/vendor/plugins
+2. restart your webserver
+3. Open XCode Project, then Build and Go!
 
 Unfortunately if you do not have a paid ADC iphone account you can not install this to your device, but once we make some more progress we will release it in the app store.
 
 Todo list:
 
-- make settings for username/password.  functionality that can download api-key and store it so that users don't have to type in api-key. (or something similar)
+- catch bad authentication errors (if an api key is revoked persay) and send user back thru setup screen
 - finish revision viewing support. to be determined how yet.
 - filter issues tab by project/assigned to me
 - filter activities tab by project/assigned to me

@@ -16,13 +16,6 @@
 
 @implementation RMAPI
 
-/* TODO - add user/password to settings, and fetch this key automagically.
- *        we will need their user/password anyways for posting issues.
- */
-
-static NSString *redmine_address = @"YOUR.REDMINE_URL.COM";
-static NSString *redmine_key = @"YOUR API KEY";
-
 +(NSNumber*) getIssueIDFromUrl:(NSString*)url {
 	
 	NSArray *split = [NSArray alloc];
@@ -70,7 +63,13 @@ static NSString *redmine_key = @"YOUR API KEY";
 
 +(void) getAllActivity:(id)anObject withSelector:(SEL)selector {
 	
-    NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"http://%@/activity.atom?key=%@", redmine_address, redmine_key]];
+	if( ![[RMineAppDelegate shared] redmine_api_key]) {
+		NSLog(@"No key found, not running..");
+		[anObject performSelectorOnMainThread:@selector(stopRefresh) withObject:nil waitUntilDone:NO];
+		return;
+	}
+	
+    NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"%@/activity.atom?key=%@", [[RMineAppDelegate shared] redmine_url], [[RMineAppDelegate shared] redmine_api_key]]];
 	NSLog(@"url is: %@", url);
 	
     CXMLDocument *rssParser = [[[CXMLDocument alloc] initWithContentsOfURL:url options:0 error:nil] autorelease];
@@ -138,7 +137,13 @@ static NSString *redmine_key = @"YOUR API KEY";
 
 +(void) getAllIssues:(id)anObject withSelector:(SEL)selector {
 	
-    NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"http://%@/iphone/issues?key=%@", redmine_address, redmine_key]];
+	if( ![[RMineAppDelegate shared] redmine_api_key]) {
+		NSLog(@"No key found, not running..");
+		[anObject performSelectorOnMainThread:@selector(stopRefresh) withObject:nil waitUntilDone:NO];
+		return;
+	}
+	
+    NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"%@/iphone/issues?key=%@", [[RMineAppDelegate shared] redmine_url], [[RMineAppDelegate shared] redmine_api_key]]];
 	NSLog(@"url is: %@", url);
 	NSData *urlData;
 	NSURLResponse *response;
@@ -199,7 +204,7 @@ static NSString *redmine_key = @"YOUR API KEY";
 			[is setTitle:[rissue objectForKey:@"issue_title"]];
 			[is setAuthorName:[rissue objectForKey:@"author_name"]];
 			[is setAuthorEmail:[rissue objectForKey:@"author_email"]];
-			[is setUrl:[NSString stringWithFormat:@"http://%@/issues/%@", redmine_address, [rissue objectForKey:@"issue_id"]]];
+			[is setUrl:[NSString stringWithFormat:@"http://%@/issues/%@", [[RMineAppDelegate shared] redmine_url], [rissue objectForKey:@"issue_id"]]];
 			[is setCreated_at:[df dateFromString:[rissue objectForKey:@"issue_created_at"]]];
 			[is setMd5hash:ourHash];
 			[is setStatus:[rissue objectForKey:@"issue_status"]];
@@ -265,7 +270,7 @@ static NSString *redmine_key = @"YOUR API KEY";
 }
 +(void)populateIssueForId:(NSNumber*)iid ob:(id)ob callback:(SEL)cb {
 	
-	NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"http://%@/iphone/issue?issue_id=%@&key=%@", redmine_address, iid, redmine_key]];
+	NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"%@/iphone/issue?issue_id=%@&key=%@", [[RMineAppDelegate shared] redmine_url], iid, [[RMineAppDelegate shared] redmine_api_key]]];
 	NSLog(@"url is: %@", url);
 	
 	NSData *urlData;
@@ -303,7 +308,7 @@ static NSString *redmine_key = @"YOUR API KEY";
 	[is setAuthorName:[feed objectForKey:@"authorName"]];
 	[is setAuthorEmail:[feed objectForKey:@"authorEmail"]];
 	NSLog(@"b3");
-	[is setUrl:[NSString stringWithFormat:@"http://%@/issues/%@", redmine_address, iid]];
+	[is setUrl:[NSString stringWithFormat:@"%@/issues/%@", [[RMineAppDelegate shared] redmine_url], iid]];
 	[is setCreated_at:[df dateFromString:[rissue objectForKey:@"created_on"]]];
 	[is setMd5hash:[RMineAppDelegate md5Hash:[iid stringValue]]];
 	[is setStatus:[feed objectForKey:@"issue_status"]];
@@ -314,7 +319,7 @@ static NSString *redmine_key = @"YOUR API KEY";
 
 +(void)populateIssueJournalsForId:(NSNumber *)iid ob:(id)ob callback:(SEL)cb {
 	
-    NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"http://%@/issues/%@.atom?key=%@", redmine_address, iid, redmine_key]];
+    NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"%@/issues/%@.atom?key=%@", [[RMineAppDelegate shared] redmine_url], iid, [[RMineAppDelegate shared] redmine_api_key]]];
 	NSLog(@"url is: %@", url);
 	
     CXMLDocument *rssParser = [[[CXMLDocument alloc] initWithContentsOfURL:url options:0 error:nil] autorelease];
@@ -379,7 +384,7 @@ static NSString *redmine_key = @"YOUR API KEY";
 +(void)updateIssueStatus:(NSNumber*)issueId ob:(id)ob callback:(SEL)cb {
 	
 	
-	NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"http://%@/iphone/issue_status?issue_id=%@&key=%@", redmine_address, issueId, redmine_key]];	
+	NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"%@/iphone/issue_status?issue_id=%@&key=%@", [[RMineAppDelegate shared] redmine_url], issueId, [[RMineAppDelegate shared] redmine_api_key]]];	
 	NSData *urlData;
 	NSURLResponse *response;
 	NSError *error;
@@ -394,6 +399,27 @@ static NSString *redmine_key = @"YOUR API KEY";
 	NSString *jdata = [[NSString alloc] initWithData:urlData encoding:NSUTF8StringEncoding];
 
 	[ob performSelectorOnMainThread:cb withObject:jdata waitUntilDone:YES];
+}
+
++(NSString*)getAuthKey:(NSString*)username pwd:(NSString*)password {
+	
+	NSURL *url = [NSURL URLWithString: [NSString stringWithFormat:@"%@/iphone/getkey?username=%@&password=%@", [[RMineAppDelegate shared] redmine_url], username, password]];	
+	NSData *urlData;
+	NSURLResponse *response;
+	NSError *error;
+	
+	NSMutableURLRequest *urlRequest = [NSMutableURLRequest requestWithURL:url
+															  cachePolicy:NSURLRequestReturnCacheDataElseLoad
+														  timeoutInterval:30];	
+	urlData = [NSURLConnection sendSynchronousRequest:urlRequest returningResponse:&response error:&error];
+	
+ 	// Construct a String around the Data from the response
+	NSString *jdata = [[NSString alloc] initWithData:urlData encoding:NSUTF8StringEncoding];
+	if([jdata length] > 15) {
+		return jdata;
+	} else {
+		return nil;
+	}
 }
 
 

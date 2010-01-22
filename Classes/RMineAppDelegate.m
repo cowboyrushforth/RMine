@@ -9,6 +9,7 @@
 #import "RMineAppDelegate.h"
 #import "ActivityUpdatesController.h"
 #import "IssuesTabController.h"
+#import "RMAPI.h"
 
 
 @implementation RMineAppDelegate
@@ -21,8 +22,11 @@ static RMineAppDelegate *shared;
 @synthesize managedObjectModel;
 @synthesize persistentStoreCoordinator;
 @synthesize gravatars;
-
-
+@synthesize appSettingsViewController=_appSettingsViewController;
+@synthesize redmine_api_key;
+@synthesize redmine_url;
+@synthesize redmine_username;
+@synthesize redmine_password;
 
 
 //this is a shortcut to getting the delegate easier
@@ -77,25 +81,84 @@ static RMineAppDelegate *shared;
     // Add the tab bar controller's current view as a subview of the window
     //[window addSubview:tabBarController.view];
 	//get tab bar going
-	tabBarController = [[UITabBarController alloc] init];         
 	
+	tabBarController = [[UITabBarController alloc] init];         
 	//get navigation controller for first tab going
 	ActivityUpdatesController *activityUpdatesController = [[[ActivityUpdatesController alloc] init] autorelease];
-	//ActivityUpdatesController.title = @"Activity"; 
-	//issuesController.tabBarItem.image = [UIImage imageNamed:@"53-house.png"];
-	
 	IssuesTabController *issuesTabController = [[[IssuesTabController alloc] init] autorelease];
 	issuesTabController.title = @"Issues";
-	
-	NSLog(@"controllers fired..");
-	//and assign
 	tabBarController.viewControllers = [NSArray arrayWithObjects:activityUpdatesController, issuesTabController, nil]; 
 	tabBarController.delegate = self;
 	
-	[window addSubview:tabBarController.view];                                           
-	[window makeKeyAndVisible]; 
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+	if([defaults stringForKey:@"redmine_api_key_preference"]) {
+		redmine_api_key = [[NSString stringWithFormat:@"%@", [defaults stringForKey:@"redmine_api_key_preference"]] retain];
+	} 
 	
+	
+	if(!redmine_api_key || [redmine_api_key length] == 0) {
+	/* redmine api key is not present, lets pop settings window, then re-fetch it */
+		if (!_appSettingsViewController) {
+			IASKAppSettingsViewController *viewController    = [[IASKAppSettingsViewController alloc] initWithNibName:@"IASKAppSettingsView" bundle:nil];
+			viewController.delegate = self;
+			UINavigationController *aNavController      = [[UINavigationController alloc] initWithRootViewController:viewController];
+			[[aNavController navigationBar] setBarStyle:UIBarStyleBlackOpaque];
+			[[aNavController view] setFrame:CGRectMake(0.0, 0.0, 320.0, 480.0)];
+			[self setAppSettingsViewController:aNavController];
+			[viewController setShowCreditsFooter:NO];  
+			//[viewController setShowDoneButton:NO]; 
+			[viewController release];
+			[aNavController release];
+		}
+		[window addSubview:_appSettingsViewController.view];
+	} else {
+		redmine_url = [defaults stringForKey:@"redmine_url_preference"];
+		[window addSubview:tabBarController.view];
+	}
+	[window makeKeyAndVisible]; 
 }
+
+- (void)settingsViewControllerDidEnd:(IASKAppSettingsViewController*)sender {
+	
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+	//check to make sure we got all values filled in
+	
+	if( ![defaults stringForKey:@"redmine_url_preference"] || [[defaults stringForKey:@"redmine_url_preference"] length] == 0 || ![[defaults stringForKey:@"redmine_url_preference"] hasPrefix:@"http"]) {
+		UIAlertView * errorAlert = [[UIAlertView alloc] initWithTitle:@"Invalid Url" message:@"Please check the url entry. Must start with http" delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+		[errorAlert show];
+		return;
+	} else {
+		redmine_url = [defaults stringForKey:@"redmine_url_preference"];
+	}
+	if( ![defaults stringForKey:@"redmine_username_preference"] || [[defaults stringForKey:@"redmine_username_preference"] length] == 0 ) {
+		UIAlertView * errorAlert = [[UIAlertView alloc] initWithTitle:@"Invalid Username" message:@"Please check the username entry." delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+		[errorAlert show];
+		return;
+	} else {
+		redmine_username = [defaults stringForKey:@"redmine_username_preference"];
+	}
+	if( ![defaults stringForKey:@"redmine_password_preference"] || [[defaults stringForKey:@"redmine_password_preference"] length] == 0 ) {
+		UIAlertView * errorAlert = [[UIAlertView alloc] initWithTitle:@"Invalid Password" message:@"Please check the password entry." delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+		[errorAlert show];
+		return;
+	} else {
+		redmine_password = [defaults stringForKey:@"redmine_password_preference"];
+	}
+
+	//ok try to get the api key now
+	if(redmine_api_key = [RMAPI getAuthKey:redmine_username pwd:redmine_password]) {
+		[defaults setObject:redmine_api_key forKey:@"redmine_api_key_preference"];
+		NSLog(@"Redmine Key Aquired: %@", redmine_api_key);
+		[window addSubview:tabBarController.view];
+	} else {
+		UIAlertView * errorAlert = [[UIAlertView alloc] initWithTitle:@"Could Not Login" message:@"Please check all fields." delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+		[errorAlert show];
+		return;
+	}
+
+}
+
 //for core data
 - (NSManagedObjectContext *) managedObjectContext {
 	
